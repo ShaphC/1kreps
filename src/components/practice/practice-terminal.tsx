@@ -1,7 +1,10 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { getNextQuestion, submitAnswer } from "@/app/practice/actions";
+import {
+  getNextQuestion,
+  submitAnswer,
+} from "@/app/(protected)/practice/actions";
 
 const SESSION_SIZE = 10;
 
