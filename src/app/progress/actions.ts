@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { calculateDailyStreak } from "@/lib/reps/streak";
 
 export type QuestionProgress = {
   questionId: string;
@@ -87,7 +88,40 @@ export async function getProgress(): Promise<{
   }
 
   // ---------------------------------------------------------
-  // 3. No practice yet
+  // 3. Fetch practice attempts for daily streak
+  // ---------------------------------------------------------
+
+  const { data: attempts, error: attemptsError } =
+    await supabase
+      .from("reps_attempts")
+      .select("created_at")
+      .eq("user_id", user.id)
+      .order("created_at", {
+        ascending: false,
+      });
+
+  if (attemptsError) {
+    console.error(
+      "Failed to fetch practice attempts:",
+      attemptsError
+    );
+
+    return {
+      success: false,
+      error: "Could not calculate your practice streak.",
+    };
+  }
+
+  // ---------------------------------------------------------
+  // 4. Calculate daily streak
+  // ---------------------------------------------------------
+
+  const currentStreak = calculateDailyStreak(
+    attempts ?? []
+  );
+
+  // ---------------------------------------------------------
+  // 5. No practice yet
   // ---------------------------------------------------------
 
   if (!userProgress || userProgress.length === 0) {
@@ -100,14 +134,14 @@ export async function getProgress(): Promise<{
         accuracy: 0,
         questionsPracticed: 0,
         questionsMastered: 0,
-        currentStreak: 0,
+        currentStreak,
         questions: [],
       },
     };
   }
 
   // ---------------------------------------------------------
-  // 4. Fetch corresponding questions
+  // 6. Fetch corresponding questions
   // ---------------------------------------------------------
 
   const questionIds = userProgress.map(
@@ -137,7 +171,7 @@ export async function getProgress(): Promise<{
   }
 
   // ---------------------------------------------------------
-  // 5. Create question lookup
+  // 7. Create question lookup
   // ---------------------------------------------------------
 
   const questionMap = new Map(
@@ -148,7 +182,7 @@ export async function getProgress(): Promise<{
   );
 
   // ---------------------------------------------------------
-  // 6. Calculate summary statistics
+  // 8. Calculate summary statistics
   // ---------------------------------------------------------
 
   const totalReps = userProgress.reduce(
@@ -184,17 +218,8 @@ export async function getProgress(): Promise<{
       (item) => item.mastery_level === "mastered"
     ).length;
 
-  const currentStreak =
-    userProgress.length > 0
-      ? Math.max(
-          ...userProgress.map(
-            (item) => item.current_streak
-          )
-        )
-      : 0;
-
   // ---------------------------------------------------------
-  // 7. Build question progress
+  // 9. Build question progress
   // ---------------------------------------------------------
 
   const questionProgress: QuestionProgress[] = [];
@@ -224,7 +249,7 @@ export async function getProgress(): Promise<{
   }
 
   // ---------------------------------------------------------
-  // 8. Return progress
+  // 10. Return progress
   // ---------------------------------------------------------
 
   return {
