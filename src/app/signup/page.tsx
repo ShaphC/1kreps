@@ -46,14 +46,6 @@ export default function SignupPage() {
       return;
     }
 
-    /*
-     * If email confirmation is disabled in Supabase,
-     * Supabase will return a session and we can immediately
-     * send the user to practice.
-     *
-     * If email confirmation is enabled, there will be no
-     * active session yet, so we show the confirmation message.
-     */
     if (data.session) {
       router.push("/practice");
       router.refresh();
@@ -70,6 +62,7 @@ export default function SignupPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-zinc-100">
       <div className="w-full max-w-md">
+        {/* Header */}
         <div className="mb-8">
           <p className="mb-2 font-mono text-sm text-green-400">1000 REPS</p>
 
@@ -82,72 +75,46 @@ export default function SignupPage() {
           </p>
         </div>
 
+        {/* Signup form */}
         <form onSubmit={handleSignup} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-2 block text-sm font-medium text-zinc-300"
-            >
-              Email
-            </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="Email"
+            required
+            disabled={loading}
+            className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-3 text-sm outline-none transition placeholder:text-zinc-600 focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600 disabled:opacity-50"
+          />
 
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-              required
-              disabled={loading}
-              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-3 text-sm outline-none transition placeholder:text-zinc-600 focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600 disabled:opacity-50"
-            />
-          </div>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Password"
+            required
+            disabled={loading}
+            className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-3 text-sm outline-none transition placeholder:text-zinc-600 focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600 disabled:opacity-50"
+          />
 
-          <div>
-            <label
-              htmlFor="password"
-              className="mb-2 block text-sm font-medium text-zinc-300"
-            >
-              Password
-            </label>
-
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="••••••••"
-              required
-              disabled={loading}
-              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-3 text-sm outline-none transition placeholder:text-zinc-600 focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600 disabled:opacity-50"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="confirm-password"
-              className="mb-2 block text-sm font-medium text-zinc-300"
-            >
-              Confirm password
-            </label>
-
-            <input
-              id="confirm-password"
-              name="confirm-password"
-              type="password"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="••••••••"
-              required
-              disabled={loading}
-              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-3 text-sm outline-none transition placeholder:text-zinc-600 focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600 disabled:opacity-50"
-            />
-          </div>
+          <input
+            id="confirm-password"
+            name="confirm-password"
+            type="password"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            placeholder="Confirm password"
+            required
+            disabled={loading}
+            className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-3 py-3 text-sm outline-none transition placeholder:text-zinc-600 focus:border-zinc-600 focus:ring-1 focus:ring-zinc-600 disabled:opacity-50"
+          />
 
           {error && (
             <div className="rounded-md border border-red-900/50 bg-red-950/30 px-3 py-3 text-sm text-red-400">
