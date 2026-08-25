@@ -30,10 +30,19 @@ export default async function ProgressPage() {
 
   if (!result.success || !result.progress) {
     return (
-      <main className="min-h-screen bg-zinc-950 p-4 text-zinc-100 md:p-8">
-        <div className="mx-auto max-w-5xl">
-          <div className="rounded-lg border border-red-900/50 bg-red-950/30 p-4 text-red-400">
-            {result.error ?? "Unable to load progress."}
+      <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-zinc-100">
+        <div className="w-full max-w-md">
+          <div className="rounded-lg border border-red-900/50 bg-red-950/30 p-6">
+            <p className="font-mono text-sm text-red-400">1000 REPS</p>
+
+            <h1 className="mt-2 text-xl font-semibold">
+              Unable to load progress
+            </h1>
+
+            <p className="mt-2 text-sm leading-6 text-zinc-400">
+              {result.error ??
+                "Something went wrong while loading your progress."}
+            </p>
           </div>
         </div>
       </main>
@@ -54,7 +63,6 @@ export default async function ProgressPage() {
   return (
     <main className="min-h-screen bg-zinc-950 p-4 text-zinc-100 md:p-8">
       <div className="mx-auto max-w-5xl">
-        {/* Header */}
         <div className="mb-8">
           <p className="text-sm text-zinc-500">LINUX</p>
 
@@ -65,22 +73,15 @@ export default async function ProgressPage() {
           </p>
         </div>
 
-        {/* Stats */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard label="Total Reps" value={totalReps} />
-
           <StatCard label="Correct Answers" value={correctAnswers} />
-
           <StatCard label="Accuracy" value={`${accuracy}%`} />
-
           <StatCard label="Questions Practiced" value={questionsPracticed} />
-
           <StatCard label="Questions Mastered" value={questionsMastered} />
-
           <StatCard label="Current Streak" value={currentStreak} />
         </div>
 
-        {/* Question progress */}
         <div className="mt-10">
           <div className="mb-4">
             <h2 className="text-lg font-semibold">Linux Commands</h2>
@@ -122,7 +123,6 @@ export default async function ProgressPage() {
                     <div className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                       <div>
                         <p className="text-zinc-600">Reps</p>
-
                         <p className="mt-1 text-zinc-300">
                           {item.totalAttempts}
                         </p>
@@ -130,7 +130,6 @@ export default async function ProgressPage() {
 
                       <div>
                         <p className="text-zinc-600">Correct</p>
-
                         <p className="mt-1 text-zinc-300">
                           {item.correctAttempts}
                         </p>
@@ -138,13 +137,11 @@ export default async function ProgressPage() {
 
                       <div>
                         <p className="text-zinc-600">Accuracy</p>
-
                         <p className="mt-1 text-zinc-300">{item.accuracy}%</p>
                       </div>
 
                       <div>
                         <p className="text-zinc-600">Recalls</p>
-
                         <p className="mt-1 text-zinc-300">
                           {item.successfulRecalls}
                         </p>
