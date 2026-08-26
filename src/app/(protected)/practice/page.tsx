@@ -27,8 +27,7 @@ export default async function PracticePage() {
       topic
     `,
     )
-    .eq("is_active", true)
-    .eq("source_type", "builtin");
+    .eq("is_active", true);
 
   if (error) {
     console.error("Failed to load practice questions:", error);
