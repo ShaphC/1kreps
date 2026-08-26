@@ -15,9 +15,9 @@ export default function AppHeader() {
   return (
     <header className="mb-6 flex items-center justify-between border-b border-zinc-800 pb-4">
       <div>
-        <p className="font-mono text-sm text-zinc-500">REPS</p>
+        <p className="font-mono text-sm text-zinc-500">1KReps</p>
 
-        <p className="text-sm text-zinc-300">Linux practice</p>
+        <p className="text-sm text-zinc-300">Every rep leads to mastery!</p>
       </div>
 
       <nav className="flex items-center gap-4">
@@ -33,6 +33,13 @@ export default function AppHeader() {
           className="text-sm text-zinc-400 transition hover:text-zinc-100"
         >
           Progress
+        </a>
+
+        <a
+          href="/questions"
+          className="text-sm text-zinc-400 transition hover:text-zinc-100"
+        >
+          Questions
         </a>
 
         <button
