@@ -17,6 +17,8 @@ type Question = {
   expected_answer: string;
   explanation: string;
   is_active: boolean;
+  source_type: string;
+  source_id: string | null;
   subject: Subject | null;
   topic: Topic | null;
 };
@@ -55,6 +57,8 @@ export default async function QuestionsPage({
         expected_answer,
         explanation,
         is_active,
+        source_type,
+        source_id,
         subject:reps_subjects (
           id,
           name
@@ -82,6 +86,8 @@ export default async function QuestionsPage({
       expected_answer: question.expected_answer,
       explanation: question.explanation,
       is_active: question.is_active,
+      source_type: question.source_type,
+      source_id: question.source_id,
       subject: Array.isArray(subject)
         ? (subject[0] ?? null)
         : (subject ?? null),

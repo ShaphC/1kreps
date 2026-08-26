@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+import { deleteQuestion } from "./actions";
+
 type Subject = {
   id: string;
   name: string;
@@ -20,6 +22,8 @@ type Question = {
   expected_answer: string;
   explanation: string;
   is_active: boolean;
+  source_type: string;
+  source_id: string | null;
   subject: Subject | null;
   topic: Topic | null;
 };
@@ -40,6 +44,10 @@ export default function QuestionsClient({
 
   const [categoryFilter, setCategoryFilter] = useState(initialCategory);
   const [topicFilter, setTopicFilter] = useState(initialTopic);
+
+  const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(
+    null,
+  );
 
   // ---------------------------------------------------------
   // SUBJECTS
@@ -159,6 +167,36 @@ export default function QuestionsClient({
     router.replace(pathname, {
       scroll: false,
     });
+  };
+
+  // ---------------------------------------------------------
+  // DELETE QUESTION
+  // ---------------------------------------------------------
+
+  const handleDelete = async (question: Question) => {
+    if (deletingQuestionId) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this question? This cannot be undone.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingQuestionId(question.id);
+
+    try {
+      await deleteQuestion(question.id);
+    } catch (error) {
+      console.error("Failed to delete question:", error);
+
+      setDeletingQuestionId(null);
+
+      window.alert("Unable to delete question. Please try again.");
+    }
   };
 
   return (
@@ -303,6 +341,8 @@ export default function QuestionsClient({
             {filteredQuestions.map((question) => {
               const subject = question.subject;
               const topic = question.topic;
+              const isUserQuestion = question.source_type === "user";
+              const isDeleting = deletingQuestionId === question.id;
 
               return (
                 <div
@@ -322,6 +362,12 @@ export default function QuestionsClient({
                       {topic && (
                         <span className="rounded border border-zinc-800 px-2 py-1 text-xs text-zinc-500">
                           {topic.name}
+                        </span>
+                      )}
+
+                      {isUserQuestion && (
+                        <span className="rounded border border-green-900/50 px-2 py-1 text-xs text-green-400">
+                          YOUR QUESTION
                         </span>
                       )}
 
@@ -357,6 +403,28 @@ export default function QuestionsClient({
                         <p className="mt-3 text-sm leading-6 text-zinc-500">
                           {question.explanation}
                         </p>
+                      )}
+
+                      {/* ACTIONS */}
+
+                      {isUserQuestion && (
+                        <div className="mt-5 flex flex-col gap-2 border-t border-zinc-900 pt-4 sm:flex-row">
+                          <Link
+                            href={`/questions/${question.id}/edit`}
+                            className="inline-flex min-h-10 items-center justify-center rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-300 transition hover:bg-zinc-900 hover:text-white"
+                          >
+                            Edit
+                          </Link>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(question)}
+                            disabled={deletingQuestionId !== null}
+                            className="inline-flex min-h-10 items-center justify-center rounded-md border border-red-900/50 px-4 py-2 text-sm text-red-400 transition hover:bg-red-950/30 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {isDeleting ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

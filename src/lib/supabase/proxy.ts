@@ -16,7 +16,7 @@ export async function updateSession(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
+            request.cookies.set(name, value),
           );
 
           supabaseResponse = NextResponse.next({
@@ -24,14 +24,35 @@ export async function updateSession(request: NextRequest) {
           });
 
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options),
           );
         },
       },
-    }
+    },
   );
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+
+  const isProtectedRoute =
+    pathname === "/practice" ||
+    pathname.startsWith("/practice/") ||
+    pathname === "/progress" ||
+    pathname.startsWith("/progress/") ||
+    pathname === "/questions" ||
+    pathname.startsWith("/questions/");
+
+  if (isProtectedRoute && !user) {
+    const loginUrl = request.nextUrl.clone();
+
+    loginUrl.pathname = "/login";
+    loginUrl.searchParams.set("redirect", pathname);
+
+    return NextResponse.redirect(loginUrl);
+  }
 
   return supabaseResponse;
 }
