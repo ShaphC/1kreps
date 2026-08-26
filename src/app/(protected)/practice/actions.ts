@@ -32,10 +32,6 @@ export async function submitAnswer({
 }): Promise<SubmitAnswerResult> {
   const supabase = await createClient();
 
-  // ---------------------------------------------------------
-  // 1. Verify authenticated user
-  // ---------------------------------------------------------
-
   const {
     data: { user },
     error: authError,
@@ -50,10 +46,6 @@ export async function submitAnswer({
       error: "You must be logged in to submit an answer.",
     };
   }
-
-  // ---------------------------------------------------------
-  // 2. Validate submitted answer
-  // ---------------------------------------------------------
 
   const trimmedAnswer = submittedAnswer.trim();
 
@@ -76,10 +68,6 @@ export async function submitAnswer({
       error: "Answer is too long.",
     };
   }
-
-  // ---------------------------------------------------------
-  // 3. Fetch question
-  // ---------------------------------------------------------
 
   const { data: question, error: questionError } = await supabase
     .from("reps_questions")
@@ -109,19 +97,11 @@ export async function submitAnswer({
     };
   }
 
-  // ---------------------------------------------------------
-  // 4. Validate answer on the server
-  // ---------------------------------------------------------
-
   const correct = validateAnswer({
     submittedAnswer: trimmedAnswer,
     acceptedAnswers: question.accepted_answers,
     caseSensitive: question.case_sensitive,
   });
-
-  // ---------------------------------------------------------
-  // 5. Record attempt
-  // ---------------------------------------------------------
 
   const { error: attemptError } = await supabase.from("reps_attempts").insert({
     user_id: user.id,
@@ -142,10 +122,6 @@ export async function submitAnswer({
       error: "We couldn't record your attempt. Please try again.",
     };
   }
-
-  // ---------------------------------------------------------
-  // 6. Fetch existing progress
-  // ---------------------------------------------------------
 
   const { data: existingProgress, error: progressFetchError } = await supabase
     .from("reps_user_progress")
@@ -177,10 +153,6 @@ export async function submitAnswer({
     };
   }
 
-  // ---------------------------------------------------------
-  // 7. Calculate new progress
-  // ---------------------------------------------------------
-
   const totalAttempts = (existingProgress?.total_attempts ?? 0) + 1;
 
   const correctAttempts =
@@ -205,10 +177,6 @@ export async function submitAnswer({
   });
 
   const now = new Date().toISOString();
-
-  // ---------------------------------------------------------
-  // 8. Create or update progress
-  // ---------------------------------------------------------
 
   if (existingProgress) {
     const { error: updateError } = await supabase
@@ -268,10 +236,6 @@ export async function submitAnswer({
     }
   }
 
-  // ---------------------------------------------------------
-  // 9. Return result
-  // ---------------------------------------------------------
-
   return {
     success: true,
     correct,
@@ -285,7 +249,10 @@ export async function submitAnswer({
 // GET NEXT QUESTION
 // =========================================================
 
-export async function getNextQuestion(currentQuestionId: string) {
+export async function getNextQuestion(
+  currentQuestionId: string,
+  excludedQuestionIds: string[] = [],
+) {
   const supabase = await createClient();
 
   // ---------------------------------------------------------
@@ -305,24 +272,7 @@ export async function getNextQuestion(currentQuestionId: string) {
   }
 
   // ---------------------------------------------------------
-  // 2. Get the current question
-  // ---------------------------------------------------------
-
-  const { data: currentQuestion, error: currentError } = await supabase
-    .from("reps_questions")
-    .select("id")
-    .eq("id", currentQuestionId)
-    .single();
-
-  if (currentError || !currentQuestion) {
-    return {
-      success: false,
-      error: "Current question could not be found.",
-    };
-  }
-
-  // ---------------------------------------------------------
-  // 3. Get the user's existing progress
+  // 2. Get the user's existing progress
   // ---------------------------------------------------------
 
   const { data: progress, error: progressError } = await supabase
@@ -349,7 +299,7 @@ export async function getNextQuestion(currentQuestionId: string) {
   }
 
   // ---------------------------------------------------------
-  // 4. Get active questions
+  // 3. Get active builtin questions
   // ---------------------------------------------------------
 
   const { data: questions, error: questionsError } = await supabase
@@ -367,9 +317,40 @@ export async function getNextQuestion(currentQuestionId: string) {
       `,
     )
     .eq("is_active", true)
-    .neq("id", currentQuestion.id);
+    .eq("source_type", "builtin");
 
   if (questionsError || !questions?.length) {
+    return {
+      success: false,
+      error: "No practice questions are available.",
+    };
+  }
+
+  // ---------------------------------------------------------
+  // 4. Remove questions already seen in this set
+  // ---------------------------------------------------------
+
+  const excludedIds = new Set([currentQuestionId, ...excludedQuestionIds]);
+
+  let availableQuestions = questions.filter(
+    (question) => !excludedIds.has(question.id),
+  );
+
+  // ---------------------------------------------------------
+  // 5. If the user has gone through the whole pool,
+  //    allow questions to repeat.
+  //
+  // This prevents the practice system from getting stuck
+  // once the user has completed more questions than exist.
+  // ---------------------------------------------------------
+
+  if (availableQuestions.length === 0) {
+    availableQuestions = questions.filter(
+      (question) => question.id !== currentQuestionId,
+    );
+  }
+
+  if (availableQuestions.length === 0) {
     return {
       success: false,
       error: "No more practice questions are available.",
@@ -377,7 +358,7 @@ export async function getNextQuestion(currentQuestionId: string) {
   }
 
   // ---------------------------------------------------------
-  // 5. Create progress lookup
+  // 6. Create progress lookup
   // ---------------------------------------------------------
 
   const progressMap = new Map(
@@ -385,12 +366,12 @@ export async function getNextQuestion(currentQuestionId: string) {
   );
 
   // ---------------------------------------------------------
-  // 6. Score questions
+  // 7. Score questions
   //
   // Lower score = higher priority.
   // ---------------------------------------------------------
 
-  const scoredQuestions = questions.map((question) => {
+  const scoredQuestions = availableQuestions.map((question) => {
     const questionProgress = progressMap.get(question.id);
 
     // Never practiced → highest priority.
@@ -438,27 +419,27 @@ export async function getNextQuestion(currentQuestionId: string) {
   });
 
   // ---------------------------------------------------------
-  // 7. Sort by priority
+  // 8. Sort by priority
   // ---------------------------------------------------------
 
   scoredQuestions.sort((a, b) => a.score - b.score);
 
   // ---------------------------------------------------------
-  // 8. Randomize among the top few
+  // 9. Randomize among the top few
   //
-  // This keeps selection from feeling completely predictable.
+  // This prevents the exact same ordering every time.
   // ---------------------------------------------------------
 
   const topQuestions = scoredQuestions.slice(
     0,
-    Math.min(3, scoredQuestions.length),
+    Math.min(5, scoredQuestions.length),
   );
 
   const selected =
     topQuestions[Math.floor(Math.random() * topQuestions.length)];
 
   // ---------------------------------------------------------
-  // 9. Return selected question
+  // 10. Return selected question
   // ---------------------------------------------------------
 
   return {

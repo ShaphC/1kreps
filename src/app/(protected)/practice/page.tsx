@@ -13,7 +13,7 @@ export default async function PracticePage() {
     redirect("/login");
   }
 
-  const { data: question, error } = await supabase
+  const { data: questions, error } = await supabase
     .from("reps_questions")
     .select(
       `
@@ -28,21 +28,21 @@ export default async function PracticePage() {
     `,
     )
     .eq("is_active", true)
-    .eq("source_type", "builtin")
-    .limit(1)
-    .single();
+    .eq("source_type", "builtin");
 
   if (error) {
-    console.error("Failed to load practice question:", error);
-    throw new Error("Unable to load a practice question.");
+    console.error("Failed to load practice questions:", error);
+    throw new Error("Unable to load practice questions.");
   }
 
-  if (!question) {
+  if (!questions || questions.length === 0) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-zinc-100">
         <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-black p-6 text-center">
           <p className="font-mono text-sm text-zinc-500">1000 REPS</p>
+
           <h1 className="mt-2 text-xl font-semibold">No practice questions</h1>
+
           <p className="mt-2 text-sm leading-6 text-zinc-500">
             There aren&apos;t any active practice questions available right now.
             Check back later.
@@ -51,6 +51,9 @@ export default async function PracticePage() {
       </main>
     );
   }
+
+  const randomIndex = Math.floor(Math.random() * questions.length);
+  const question = questions[randomIndex];
 
   return <PracticeTerminal question={question} />;
 }
