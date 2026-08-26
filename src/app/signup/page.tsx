@@ -1,7 +1,9 @@
 "use client";
 
-import { FormEvent, useState } from "react";
 import Link from "next/link";
+
+/*
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -62,7 +64,6 @@ export default function SignupPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-zinc-100">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="mb-8">
           <p className="mb-2 font-mono text-sm text-green-400">1000 REPS</p>
 
@@ -75,7 +76,6 @@ export default function SignupPage() {
           </p>
         </div>
 
-        {/* Signup form */}
         <form onSubmit={handleSignup} className="space-y-4">
           <input
             id="email"
@@ -145,6 +145,49 @@ export default function SignupPage() {
           >
             Sign in
           </Link>
+        </p>
+      </div>
+    </main>
+  );
+}
+*/
+
+export default function SignupPage() {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-zinc-100">
+      <div className="w-full max-w-md">
+        <div className="mb-8">
+          <p className="mb-2 font-mono text-sm text-green-400">1000 REPS</p>
+
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Currently in beta
+          </h1>
+
+          <p className="mt-3 text-sm leading-6 text-zinc-400">
+            1000 Reps is currently being tested with a small group of users.
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-zinc-800 bg-black p-5">
+          <p className="text-sm leading-6 text-zinc-400">
+            New accounts are temporarily unavailable while we test the app and
+            improve the experience.
+          </p>
+
+          <p className="mt-4 text-sm leading-6 text-zinc-500">
+            If you already have a beta account, you can sign in below.
+          </p>
+        </div>
+
+        <Link
+          href="/login"
+          className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-950 transition hover:bg-white"
+        >
+          Sign in
+        </Link>
+
+        <p className="mt-6 text-center font-mono text-xs text-zinc-600">
+          BETA ACCESS ONLY
         </p>
       </div>
     </main>
