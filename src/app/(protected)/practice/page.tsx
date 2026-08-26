@@ -22,7 +22,9 @@ export default async function PracticePage() {
       expected_answer,
       accepted_answers,
       explanation,
-      case_sensitive
+      case_sensitive,
+      category,
+      topic
     `,
     )
     .eq("is_active", true)

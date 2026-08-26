@@ -83,14 +83,18 @@ export async function submitAnswer({
 
   const { data: question, error: questionError } = await supabase
     .from("reps_questions")
-    .select(`
+    .select(
+      `
       id,
+      question_text,
       expected_answer,
       accepted_answers,
       explanation,
       case_sensitive,
-      is_active
-    `)
+      category,
+      topic
+    `,
+    )
     .eq("id", questionId)
     .eq("is_active", true)
     .single();
@@ -119,21 +123,16 @@ export async function submitAnswer({
   // 5. Record attempt
   // ---------------------------------------------------------
 
-  const { error: attemptError } = await supabase
-    .from("reps_attempts")
-    .insert({
-      user_id: user.id,
-      question_id: question.id,
-      submitted_answer: trimmedAnswer,
-      is_correct: correct,
-      practice_mode: practiceMode,
-    });
+  const { error: attemptError } = await supabase.from("reps_attempts").insert({
+    user_id: user.id,
+    question_id: question.id,
+    submitted_answer: trimmedAnswer,
+    is_correct: correct,
+    practice_mode: practiceMode,
+  });
 
   if (attemptError) {
-    console.error(
-      "Failed to record practice attempt:",
-      attemptError
-    );
+    console.error("Failed to record practice attempt:", attemptError);
 
     return {
       success: false,
@@ -148,10 +147,10 @@ export async function submitAnswer({
   // 6. Fetch existing progress
   // ---------------------------------------------------------
 
-  const { data: existingProgress, error: progressFetchError } =
-    await supabase
-      .from("reps_user_progress")
-      .select(`
+  const { data: existingProgress, error: progressFetchError } = await supabase
+    .from("reps_user_progress")
+    .select(
+      `
         id,
         total_attempts,
         correct_attempts,
@@ -160,16 +159,14 @@ export async function submitAnswer({
         current_streak,
         successful_recalls,
         mastery_level
-      `)
-      .eq("user_id", user.id)
-      .eq("question_id", question.id)
-      .maybeSingle();
+      `,
+    )
+    .eq("user_id", user.id)
+    .eq("question_id", question.id)
+    .maybeSingle();
 
   if (progressFetchError) {
-    console.error(
-      "Failed to fetch user progress:",
-      progressFetchError
-    );
+    console.error("Failed to fetch user progress:", progressFetchError);
 
     return {
       success: false,
@@ -184,24 +181,20 @@ export async function submitAnswer({
   // 7. Calculate new progress
   // ---------------------------------------------------------
 
-  const totalAttempts =
-    (existingProgress?.total_attempts ?? 0) + 1;
+  const totalAttempts = (existingProgress?.total_attempts ?? 0) + 1;
 
   const correctAttempts =
-    (existingProgress?.correct_attempts ?? 0) +
-    (correct ? 1 : 0);
+    (existingProgress?.correct_attempts ?? 0) + (correct ? 1 : 0);
 
   const incorrectAttempts =
-    (existingProgress?.incorrect_attempts ?? 0) +
-    (correct ? 0 : 1);
+    (existingProgress?.incorrect_attempts ?? 0) + (correct ? 0 : 1);
 
   const currentStreak = correct
     ? (existingProgress?.current_streak ?? 0) + 1
     : 0;
 
   const successfulRecalls =
-    (existingProgress?.successful_recalls ?? 0) +
-    (correct ? 1 : 0);
+    (existingProgress?.successful_recalls ?? 0) + (correct ? 1 : 0);
 
   const progress = calculateProgress({
     totalAttempts,
@@ -235,10 +228,7 @@ export async function submitAnswer({
       .eq("id", existingProgress.id);
 
     if (updateError) {
-      console.error(
-        "Failed to update user progress:",
-        updateError
-      );
+      console.error("Failed to update user progress:", updateError);
 
       return {
         success: false,
@@ -266,10 +256,7 @@ export async function submitAnswer({
       });
 
     if (insertError) {
-      console.error(
-        "Failed to create user progress:",
-        insertError
-      );
+      console.error("Failed to create user progress:", insertError);
 
       return {
         success: false,
@@ -298,9 +285,7 @@ export async function submitAnswer({
 // GET NEXT QUESTION
 // =========================================================
 
-export async function getNextQuestion(
-  currentQuestionId: string
-) {
+export async function getNextQuestion(currentQuestionId: string) {
   const supabase = await createClient();
 
   // ---------------------------------------------------------
@@ -323,12 +308,11 @@ export async function getNextQuestion(
   // 2. Get the current question
   // ---------------------------------------------------------
 
-  const { data: currentQuestion, error: currentError } =
-    await supabase
-      .from("reps_questions")
-      .select("id")
-      .eq("id", currentQuestionId)
-      .single();
+  const { data: currentQuestion, error: currentError } = await supabase
+    .from("reps_questions")
+    .select("id")
+    .eq("id", currentQuestionId)
+    .single();
 
   if (currentError || !currentQuestion) {
     return {
@@ -341,24 +325,22 @@ export async function getNextQuestion(
   // 3. Get the user's existing progress
   // ---------------------------------------------------------
 
-  const { data: progress, error: progressError } =
-    await supabase
-      .from("reps_user_progress")
-      .select(`
+  const { data: progress, error: progressError } = await supabase
+    .from("reps_user_progress")
+    .select(
+      `
         question_id,
         total_attempts,
         correct_attempts,
         accuracy,
         mastery_level,
         last_attempted_at
-      `)
-      .eq("user_id", user.id);
+      `,
+    )
+    .eq("user_id", user.id);
 
   if (progressError) {
-    console.error(
-      "Failed to fetch question progress:",
-      progressError
-    );
+    console.error("Failed to fetch question progress:", progressError);
 
     return {
       success: false,
@@ -370,19 +352,22 @@ export async function getNextQuestion(
   // 4. Get active questions
   // ---------------------------------------------------------
 
-  const { data: questions, error: questionsError } =
-    await supabase
-      .from("reps_questions")
-      .select(`
+  const { data: questions, error: questionsError } = await supabase
+    .from("reps_questions")
+    .select(
+      `
         id,
         question_text,
         expected_answer,
         accepted_answers,
         explanation,
-        case_sensitive
-      `)
-      .eq("is_active", true)
-      .neq("id", currentQuestion.id);
+        case_sensitive,
+        category,
+        topic
+      `,
+    )
+    .eq("is_active", true)
+    .neq("id", currentQuestion.id);
 
   if (questionsError || !questions?.length) {
     return {
@@ -396,10 +381,7 @@ export async function getNextQuestion(
   // ---------------------------------------------------------
 
   const progressMap = new Map(
-    (progress ?? []).map((item) => [
-      item.question_id,
-      item,
-    ])
+    (progress ?? []).map((item) => [item.question_id, item]),
   );
 
   // ---------------------------------------------------------
@@ -434,10 +416,7 @@ export async function getNextQuestion(
     // Recently practiced questions get deprioritized.
     if (questionProgress.last_attempted_at) {
       const daysSinceAttempt =
-        (Date.now() -
-          new Date(
-            questionProgress.last_attempted_at
-          ).getTime()) /
+        (Date.now() - new Date(questionProgress.last_attempted_at).getTime()) /
         (1000 * 60 * 60 * 24);
 
       if (daysSinceAttempt < 1) {
@@ -472,13 +451,11 @@ export async function getNextQuestion(
 
   const topQuestions = scoredQuestions.slice(
     0,
-    Math.min(3, scoredQuestions.length)
+    Math.min(3, scoredQuestions.length),
   );
 
   const selected =
-    topQuestions[
-      Math.floor(Math.random() * topQuestions.length)
-    ];
+    topQuestions[Math.floor(Math.random() * topQuestions.length)];
 
   // ---------------------------------------------------------
   // 9. Return selected question

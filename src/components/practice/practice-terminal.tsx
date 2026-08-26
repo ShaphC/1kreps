@@ -15,6 +15,8 @@ type Question = {
   accepted_answers: string[];
   explanation: string;
   case_sensitive: boolean;
+  category: string | null;
+  topic: string | null;
 };
 
 export default function PracticeTerminal({ question }: { question: Question }) {
