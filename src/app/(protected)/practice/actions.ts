@@ -249,6 +249,10 @@ export async function submitAnswer({
 // GET NEXT QUESTION
 // =========================================================
 
+// =========================================================
+// GET NEXT QUESTION
+// =========================================================
+
 export async function getNextQuestion(
   currentQuestionId: string,
   excludedQuestionIds: string[] = [],
@@ -299,7 +303,11 @@ export async function getNextQuestion(
   }
 
   // ---------------------------------------------------------
-  // 3. Get active builtin questions
+  // 3. Get active practice questions
+  //
+  // IMPORTANT:
+  // Do not restrict this to builtin questions.
+  // User-created questions can also be practiced.
   // ---------------------------------------------------------
 
   const { data: questions, error: questionsError } = await supabase
@@ -316,10 +324,18 @@ export async function getNextQuestion(
         topic
       `,
     )
-    .eq("is_active", true)
-    .eq("source_type", "builtin");
+    .eq("is_active", true);
 
-  if (questionsError || !questions?.length) {
+  if (questionsError) {
+    console.error("Failed to load practice questions:", questionsError);
+
+    return {
+      success: false,
+      error: "Could not load practice questions.",
+    };
+  }
+
+  if (!questions || questions.length === 0) {
     return {
       success: false,
       error: "No practice questions are available.",
@@ -327,38 +343,32 @@ export async function getNextQuestion(
   }
 
   // ---------------------------------------------------------
-  // 4. Remove questions already seen in this set
+  // 4. Build exclusion set
   // ---------------------------------------------------------
 
   const excludedIds = new Set([currentQuestionId, ...excludedQuestionIds]);
+
+  // ---------------------------------------------------------
+  // 5. Prefer questions that haven't been seen in this set
+  // ---------------------------------------------------------
 
   let availableQuestions = questions.filter(
     (question) => !excludedIds.has(question.id),
   );
 
   // ---------------------------------------------------------
-  // 5. If the user has gone through the whole pool,
-  //    allow questions to repeat.
+  // 6. If we've exhausted the current set, allow repeats.
   //
-  // This prevents the practice system from getting stuck
-  // once the user has completed more questions than exist.
+  // If there is only one question, allow the current question
+  // to repeat rather than returning an empty result.
   // ---------------------------------------------------------
 
   if (availableQuestions.length === 0) {
-    availableQuestions = questions.filter(
-      (question) => question.id !== currentQuestionId,
-    );
-  }
-
-  if (availableQuestions.length === 0) {
-    return {
-      success: false,
-      error: "No more practice questions are available.",
-    };
+    availableQuestions = questions;
   }
 
   // ---------------------------------------------------------
-  // 6. Create progress lookup
+  // 7. Create progress lookup
   // ---------------------------------------------------------
 
   const progressMap = new Map(
@@ -366,7 +376,7 @@ export async function getNextQuestion(
   );
 
   // ---------------------------------------------------------
-  // 7. Score questions
+  // 8. Score questions
   //
   // Lower score = higher priority.
   // ---------------------------------------------------------
@@ -419,15 +429,13 @@ export async function getNextQuestion(
   });
 
   // ---------------------------------------------------------
-  // 8. Sort by priority
+  // 9. Sort by priority
   // ---------------------------------------------------------
 
   scoredQuestions.sort((a, b) => a.score - b.score);
 
   // ---------------------------------------------------------
-  // 9. Randomize among the top few
-  //
-  // This prevents the exact same ordering every time.
+  // 10. Randomize among the top questions
   // ---------------------------------------------------------
 
   const topQuestions = scoredQuestions.slice(
@@ -439,7 +447,7 @@ export async function getNextQuestion(
     topQuestions[Math.floor(Math.random() * topQuestions.length)];
 
   // ---------------------------------------------------------
-  // 10. Return selected question
+  // 11. Return selected question
   // ---------------------------------------------------------
 
   return {
