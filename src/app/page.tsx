@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 const STRIPE_PRO_MONTHLY_URL = "YOUR_STRIPE_PRO_MONTHLY_URL";
 const STRIPE_PRO_ANNUAL_URL = "YOUR_STRIPE_PRO_ANNUAL_URL";
 
-function IconTerminal() {
+function IconQuestion() {
   return (
     <svg
       width="22"
@@ -19,9 +19,9 @@ function IconTerminal() {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <rect x="3" y="4" width="18" height="16" rx="2" />
-      <path d="m7 9 3 3-3 3" />
-      <path d="M13 15h4" />
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.8 9a2.4 2.4 0 0 1 4.6 1c0 1.7-2.4 2-2.4 3.5" />
+      <path d="M12 17h.01" />
     </svg>
   );
 }
@@ -267,7 +267,7 @@ function ProgressStats() {
 }
 
 function PracticeAnimation() {
-  const answer = "pwd";
+  const answer = "Tokyo";
 
   const [phase, setPhase] = useState<"typing" | "checking" | "done">("typing");
 
@@ -275,56 +275,60 @@ function PracticeAnimation() {
 
   useEffect(() => {
     let cancelled = false;
-    let timeout: ReturnType<typeof setTimeout>;
+    const timers: ReturnType<typeof setTimeout>[] = [];
 
-    const typeAnswer = async () => {
-      setPhase("typing");
-      setTypedAnswer("");
+    const wait = (duration: number) =>
+      new Promise<void>((resolve) => {
+        const timer = setTimeout(resolve, duration);
+        timers.push(timer);
+      });
 
-      for (let i = 0; i < answer.length; i++) {
+    const runAnimation = async () => {
+      while (!cancelled) {
+        setPhase("typing");
+        setTypedAnswer("");
+
+        await wait(700);
+
+        for (let i = 0; i < answer.length; i++) {
+          if (cancelled) {
+            return;
+          }
+
+          await wait(180);
+
+          if (cancelled) {
+            return;
+          }
+
+          setTypedAnswer(answer.slice(0, i + 1));
+        }
+
+        await wait(700);
+
         if (cancelled) {
           return;
         }
 
-        await new Promise((resolve) => {
-          timeout = setTimeout(resolve, 500);
-        });
+        setPhase("checking");
+
+        await wait(800);
 
         if (cancelled) {
           return;
         }
 
-        setTypedAnswer(answer.slice(0, i + 1));
+        setPhase("done");
+
+        await wait(3000);
       }
-
-      if (cancelled) {
-        return;
-      }
-
-      timeout = setTimeout(() => {
-        if (!cancelled) {
-          setPhase("checking");
-        }
-      }, 700);
-
-      timeout = setTimeout(() => {
-        if (!cancelled) {
-          setPhase("done");
-        }
-      }, 1500);
-
-      timeout = setTimeout(() => {
-        if (!cancelled) {
-          typeAnswer();
-        }
-      }, 4500);
     };
 
-    typeAnswer();
+    runAnimation();
 
     return () => {
       cancelled = true;
-      clearTimeout(timeout);
+      timers.forEach(clearTimeout);
     };
   }, []);
 
@@ -341,14 +345,17 @@ function PracticeAnimation() {
       </div>
 
       <div className="min-h-[340px] p-5 font-mono text-sm sm:p-8">
-        <div className="text-zinc-500">
-          ~/1KReps <span className="font-bold text-emerald-400">$</span> rep
-          start
+        <div className="flex items-center justify-between">
+          <span className="text-zinc-500">Geography</span>
+
+          <span className="rounded-full border border-emerald-900 bg-emerald-950/30 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-emerald-400">
+            Rep 247
+          </span>
         </div>
 
         <div className="mt-8">
           <p className="font-bold leading-6 text-white">
-            What command shows the current working directory?
+            What is the capital of Japan?
           </p>
 
           <div className="mt-6 flex min-h-[50px] items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950 px-4 py-3">
@@ -383,7 +390,7 @@ function PracticeAnimation() {
             </div>
 
             <p className="mt-2 text-xs font-semibold leading-5 text-zinc-300">
-              pwd prints the path of your current working directory.
+              Tokyo is the capital and largest city of Japan.
             </p>
 
             <div className="mt-4 font-mono text-[10px] font-bold uppercase tracking-widest text-emerald-500">
@@ -399,26 +406,27 @@ function PracticeAnimation() {
 const steps = [
   {
     number: "01",
-    title: "Recall",
-    description: "Get a focused question and retrieve the answer from memory.",
-    icon: <IconTarget />,
+    title: "Choose",
+    description:
+      "Choose what you want to learn and build your own set of questions.",
+    icon: <IconQuestion />,
   },
   {
     number: "02",
-    title: "Answer",
-    description: "Type the command or concept you believe is correct.",
-    icon: <IconTerminal />,
+    title: "Recall",
+    description: "See a question and try to retrieve the answer from memory.",
+    icon: <IconTarget />,
   },
   {
     number: "03",
     title: "Get feedback",
-    description: "Immediately see whether you got it right and understand why.",
+    description: "Check your answer right away and reinforce what you know.",
     icon: <IconCheck />,
   },
   {
     number: "04",
     title: "Repeat",
-    description: "Keep doing reps until the knowledge becomes automatic.",
+    description: "Keep doing reps until remembering becomes automatic.",
     icon: <IconRepeat />,
   },
 ];
@@ -426,21 +434,21 @@ const steps = [
 const testimonials = [
   {
     quote:
-      "I stopped just reading commands and started actually remembering them.",
+      "I stopped just reading things over and over and started actually remembering them.",
     name: "Beta User",
-    role: "Software Developer",
+    role: "Early Tester",
   },
   {
     quote:
-      "The repetition makes a huge difference. Commands I used to look up are starting to become automatic.",
+      "The repetition makes a huge difference. Things I used to forget are starting to come back automatically.",
     name: "Beta User",
-    role: "Engineer",
+    role: "Early Tester",
   },
   {
     quote:
       "It feels less like studying and more like training. I can jump in, do a few reps, and move on.",
     name: "Beta User",
-    role: "Developer",
+    role: "Early Tester",
   },
 ];
 
@@ -451,11 +459,11 @@ const plans = [
     period: "",
     description: "Everything you need to start building the habit.",
     features: [
-      "Core practice questions",
+      "Create your own questions",
+      "Practice your questions",
       "Progress tracking",
       "Accuracy tracking",
       "Streak tracking",
-      "Personal question bank",
     ],
     href: "/signup",
     cta: "Start for free",
@@ -465,14 +473,14 @@ const plans = [
     name: "Pro Monthly",
     price: "$9",
     period: "/month",
-    description: "More practice power for serious builders.",
+    description: "More ways to practice, review, and keep improving.",
     features: [
       "Everything in Free",
       "Unlimited custom questions",
       "Advanced practice modes",
       "Smarter review",
       "Detailed progress insights",
-      "Expanded skill categories",
+      "Expanded practice features",
     ],
     href: STRIPE_PRO_MONTHLY_URL,
     cta: "Get Pro",
@@ -482,7 +490,7 @@ const plans = [
     name: "Pro Annual",
     price: "$79",
     period: "/year",
-    description: "The best value for long-term mastery.",
+    description: "The best value for building long-term mastery.",
     features: [
       "Everything in Pro Monthly",
       "2 months free",
@@ -649,7 +657,6 @@ export default function HomePage() {
             : "pointer-events-none opacity-0"
         }`}
       >
-        {/* BACKDROP */}
         <button
           type="button"
           onClick={closeDrawer}
@@ -657,14 +664,12 @@ export default function HomePage() {
           className="absolute inset-0 h-full w-full bg-black/75 backdrop-blur-sm"
         />
 
-        {/* DRAWER */}
         <aside
           aria-label="Mobile navigation"
           className={`absolute left-0 top-0 flex h-full w-[min(85vw,320px)] flex-col border-r border-zinc-800 bg-zinc-950 shadow-2xl transition-transform duration-500 ease-out ${
             isDrawerOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          {/* DRAWER HEADER */}
           <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
             <div>
               <p className="font-mono text-sm font-black text-white">1KReps</p>
@@ -684,7 +689,6 @@ export default function HomePage() {
             </button>
           </div>
 
-          {/* DRAWER LINKS */}
           <nav className="flex flex-col p-3">
             <a
               href="#how-it-works"
@@ -727,7 +731,6 @@ export default function HomePage() {
             </Link>
           </nav>
 
-          {/* DRAWER CTA */}
           <div className="mt-auto border-t border-zinc-800 p-4">
             <Link
               href="/signup"
@@ -749,20 +752,20 @@ export default function HomePage() {
                 <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.7)]" />
 
                 <span className="font-mono text-xs font-black tracking-wide text-emerald-300">
-                  BUILD TECHNICAL MUSCLE MEMORY
+                  LEARN IT. PRACTICE IT. REMEMBER IT.
                 </span>
               </div>
 
               <h1 className="text-5xl font-black tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl lg:leading-[1.02]">
-                Master the commands
+                Turn what you learn
                 <br />
-                you actually need.
+                into what you remember.
               </h1>
 
               <p className="mt-7 max-w-xl text-base font-semibold leading-7 text-zinc-300 sm:text-lg">
-                1KReps turns technical knowledge into muscle memory through
-                deliberate repetition. Practice, recall, get feedback, and
-                repeat until it sticks.
+                1KReps helps you master what matters through simple, focused
+                repetition. Create what you want to practice, test yourself, get
+                instant feedback, and keep going until it sticks.
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -803,12 +806,13 @@ export default function HomePage() {
             </p>
 
             <h2 className="mt-4 text-3xl font-black tracking-tight text-white sm:text-4xl">
-              Knowledge becomes skill through reps.
+              Remember more by practicing more.
             </h2>
 
             <p className="mt-5 text-base font-semibold leading-7 text-zinc-400">
-              Instead of endlessly consuming tutorials, train yourself to recall
-              the things you actually need to know.
+              Reading something once isn't enough. 1KReps gets you actively
+              recalling what you've learned so it becomes easier to remember
+              when you need it.
             </p>
           </div>
 
@@ -818,7 +822,6 @@ export default function HomePage() {
                 key={step.number}
                 className="group rounded-xl border border-zinc-800 bg-zinc-900/50 p-6 transition duration-300 hover:-translate-y-1 hover:border-emerald-800 hover:bg-zinc-900"
               >
-                {/* NUMBER LEFT / ICON RIGHT */}
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-xs font-black text-emerald-600">
                     {step.number}
@@ -858,22 +861,24 @@ export default function HomePage() {
               </h2>
 
               <p className="mt-6 max-w-lg text-base font-semibold leading-7 text-zinc-400">
-                Most technical learning is optimized around consuming
-                information. 1KReps is designed around retrieving it.
+                It's easy to read, watch, or study something and feel like
+                you've learned it. The real test is whether you can remember it
+                later.
               </p>
 
               <p className="mt-4 max-w-lg text-base font-semibold leading-7 text-zinc-400">
-                The goal isn't to make you feel productive. It's to make the
-                right command come to mind when you actually need it.
+                1KReps turns learning into practice. Instead of simply reviewing
+                the answer, you challenge yourself to recall it again and again
+                until it becomes familiar.
               </p>
             </div>
 
             <div className="rounded-xl border border-zinc-800 bg-black p-7">
               {[
-                ["01", "Recall", "Retrieve it from memory"],
-                ["02", "Feedback", "Find out if you're right"],
-                ["03", "Repeat", "Strengthen the connection"],
-                ["04", "Master", "Make it automatic"],
+                ["01", "Recall", "Bring the answer back from memory"],
+                ["02", "Feedback", "See what you got right"],
+                ["03", "Repeat", "Strengthen what you're learning"],
+                ["04", "Master", "Make remembering feel automatic"],
               ].map(([number, title, description]) => (
                 <div
                   key={number}
@@ -911,8 +916,8 @@ export default function HomePage() {
               </h2>
 
               <p className="mt-5 text-base font-semibold leading-7 text-zinc-400">
-                Track your reps, accuracy, streaks, and mastery as your
-                technical knowledge compounds.
+                See your effort add up. Track your reps, accuracy, streaks, and
+                mastery as the things you're learning become easier to remember.
               </p>
 
               <Link
@@ -940,11 +945,11 @@ export default function HomePage() {
             </p>
 
             <h2 className="mt-4 text-3xl font-black tracking-tight text-white sm:text-4xl">
-              Built for people who want to actually remember.
+              Learning feels different when you actually remember it.
             </h2>
 
             <p className="mx-auto mt-5 max-w-xl text-base font-semibold leading-7 text-zinc-400">
-              Real practice beats passive consumption.
+              Less passive review. More active practice.
             </p>
           </div>
 
@@ -986,11 +991,12 @@ export default function HomePage() {
             </p>
 
             <h2 className="mt-4 text-3xl font-black tracking-tight text-white sm:text-4xl">
-              Start free. Upgrade when you're ready.
+              Start free. Build the habit.
             </h2>
 
             <p className="mx-auto mt-5 max-w-xl text-base font-semibold leading-7 text-zinc-400">
-              Build the habit first. Pay when you want more ways to practice.
+              Start practicing for free and upgrade when you want more ways to
+              learn, review, and improve.
             </p>
           </div>
 
@@ -1079,8 +1085,8 @@ export default function HomePage() {
           </h2>
 
           <p className="mx-auto mt-6 max-w-xl text-base font-semibold leading-7 text-zinc-400">
-            You don't need another tutorial. You need to practice what you
-            already know you need.
+            Whatever you're trying to learn, remembering it starts with
+            practice. One question. One answer. One rep at a time.
           </p>
 
           <Link
